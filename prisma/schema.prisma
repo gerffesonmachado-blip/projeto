@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Estudante {
+  id          Int          @id @default(autoincrement())
+  nome        String
+  matricula   String       @unique
+  email       String       @unique
+  turma       String
+  deletedAt   DateTime?    @map("deleted_at")
+  emprestimos Emprestimo[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([nome])
+  @@map("estudantes")
+}
+
+model Livro {
+  id                    Int              @id @default(autoincrement())
+  titulo                String
+  autor                 String
+  ano                   Int
+  exemplaresTotal       Int              @default(1) @map("exemplares_total")
+  exemplaresDisponiveis Int              @default(1) @map("exemplares_disponiveis")
+  deletedAt             DateTime?        @map("deleted_at")
+  emprestimos           Emprestimo[]
+  categorias            LivroCategoria[]
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@index([titulo])
+  @@index([autor])
+  @@map("livros")
+}
+
+model Categoria {
+  id        Int              @id @default(autoincrement())
+  nome      String           @unique
+  descricao String?
+  livros    LivroCategoria[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("categorias")
+}
+
+model LivroCategoria {
+  livroId     Int       @map("livro_id")
+  categoriaId Int       @map("categoria_id")
+  livro       Livro     @relation(fields: [livroId], references: [id], onDelete: Cascade)
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@id([livroId, categoriaId])
+  @@map("livro_categorias")
+}
+
+model Emprestimo {
+  id             Int       @id @default(autoincrement())
+  estudanteId    Int       @map("estudante_id")
+  livroId        Int       @map("livro_id")
+  dataEmprestimo DateTime  @default(now()) @map("data_emprestimo")
+  dataPrevista   DateTime  @map("data_prevista")
+  dataDevolucao  DateTime? @map("data_devolucao")
+  status         String    @default("ativo")
+  estudante      Estudante @relation(fields: [estudanteId], references: [id], onDelete: Restrict)
+  livro          Livro     @relation(fields: [livroId], references: [id], onDelete: Restrict)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([estudanteId])
+  @@map("emprestimos")
+}
